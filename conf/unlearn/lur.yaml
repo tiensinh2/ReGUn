@@ -1,0 +1,31 @@
+name: lur
+
+evaluate_each_epoch: true
+
+alpha: 0.01
+retain_weight: 0.5
+forget_weight: ${eval:1 - ${.retain_weight}}
+# To match paper's Lr + lambda * Lf(θ′): retain_weight = 1 and forget_weight = lambda
+
+pruning:
+  enabled: true
+  auto: true
+  sparsity: null
+  prune_num: 1
+  layer_patterns: null
+  exclude_bn: true
+
+trainer:
+  max_epochs: 10
+
+optim:
+  name: sgd
+  lr: 0.01
+  momentum: 0.9           # only used if sgd
+  weight_decay: 0.0
+  nesterov: false         # only used if sgd
+  betas: [0.9, 0.999]     # only used if adamw
+  exclude_wd_norm_bias: true  # only used if adamw
+
+scheduler:
+  name: none

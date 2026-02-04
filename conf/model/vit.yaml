@@ -1,0 +1,24 @@
+model:
+  name: vit_b_16           # vit_b_16 | vit_b_32 | vit_l_16 | vit_l_32
+  num_classes: 10
+  pretrained: false        # use ImageNet-1k weights from torchvision
+  freeze_backbone: false
+  image_size: 224          # set 32 for CIFAR; use 224 for ImageNet-sized inputs
+  stem: null               # will be ignored
+
+optim:
+  name: adamw             # adamw | sgd
+  lr: 3e-4
+  weight_decay: 0.05
+  momentum: 0.9           # only used if sgd
+  nesterov: true          # only used if sgd
+  betas: [0.9, 0.999]     # only used if adamw
+  exclude_wd_norm_bias: true
+
+scheduler:
+  name: cosine            # step | cosine | none
+  step_size: 40           # only used in step
+  gamma: 0.1              # only used in step
+  t_max: ${trainer.max_epochs}  # only used in cosine
+  warmup_epochs: 3         
+  warmup_start_lr: 1e-6     

@@ -1,0 +1,25 @@
+model:
+  name: swin_t            # swin_t | swin_s | swin_b
+  num_classes: 10
+  pretrained: false       # use ImageNet-1k weights from torchvision
+  freeze_backbone: false
+  label_smoothing: 0.1
+  image_size: null        # will be ignored
+  stem: null              # will be ignored
+
+optim:
+  name: adamw             # adamw | sgd
+  lr: 3e-4
+  weight_decay: 0.05
+  momentum: 0.9           # only used if sgd
+  nesterov: true          # only used if sgd
+  betas: [0.9, 0.999]     # only used if adamw
+  exclude_wd_norm_bias: true
+
+scheduler:
+  name: cosine            # step | cosine | none
+  step_size: 40           # only used in step
+  gamma: 0.1              # only used in step
+  t_max: ${trainer.max_epochs}  # only used in cosine
+  warmup_epochs: 10 
+  warmup_start_lr: 1e-6

@@ -1,0 +1,18 @@
+name: finetune
+
+evaluate_each_epoch: true
+
+trainer:
+  max_epochs: 2
+
+optim:
+  name: sgd
+  lr: 0.01
+  momentum: 0.9           # only used if sgd
+  weight_decay: 0.0
+  nesterov: false         # only used if sgd
+  betas: [0.9, 0.999]     # only used if adamw
+  exclude_wd_norm_bias: true  # only used if adamw
+
+scheduler:
+  name: none

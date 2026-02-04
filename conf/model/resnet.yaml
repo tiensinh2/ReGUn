@@ -1,0 +1,20 @@
+model:
+  name: resnet18           # resnet18 | resnet34 | resnet50
+  num_classes: 10
+  pretrained: false        # use ImageNet-1k weights from torchvision
+  stem: cifar              # none | cifar | tiny_imagenet
+  freeze_backbone: false
+
+optim:
+  name: sgd                # adamw | sgd
+  lr: 0.1
+  weight_decay: 5e-4
+  momentum: 0.9            # only used if sgd
+  nesterov: true           # only used if sgd
+  betas: [0.9, 0.999]      # only used if adamw
+
+scheduler:
+  name: cosine             # step | cosine | none
+  step_size: 40            # only used in step
+  gamma: 0.1               # only used in step
+  t_max: ${trainer.max_epochs} # only used in cosine

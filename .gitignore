@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+outputs/
+cache/
+logs/
+test_*
+tmp_*

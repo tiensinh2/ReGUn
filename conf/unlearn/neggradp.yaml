@@ -1,0 +1,51 @@
+name: neggradp
+
+evaluate_each_epoch: true
+
+sequential: false
+
+trainer:
+  max_epochs: 10
+
+retain_weight: 0.5
+forget_weight: ${eval:1 - ${.retain_weight}}
+
+optim:
+  name: sgd
+  lr: 0.01
+  momentum: 0.9           # only used if sgd
+  weight_decay: 0.0
+  nesterov: false         # only used if sgd
+  betas: [0.9, 0.999]     # only used if adamw
+  exclude_wd_norm_bias: true  # only used if adamw
+
+scheduler:
+  name: none
+
+neggrad:
+  epochs: 5
+  optim:
+    name: sgd
+    lr: 0.01
+    momentum: 0.9           # only used if sgd
+    weight_decay: 0.0
+    nesterov: false         # only used if sgd
+    betas: [0.9, 0.999]     # only used if adamw
+    exclude_wd_norm_bias: true  # only used if adamw
+
+  scheduler:
+    name: none
+
+finetune:
+  epochs: 5
+  optim:
+    name: sgd
+    lr: 0.01
+    momentum: 0.9           # only used if sgd
+    weight_decay: 0.0
+    nesterov: false         # only used if sgd
+    betas: [0.9, 0.999]     # only used if adamw
+    exclude_wd_norm_bias: true  # only used if adamw
+
+  scheduler:
+    name: none

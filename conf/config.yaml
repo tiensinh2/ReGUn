@@ -1,0 +1,64 @@
+defaults:
+  - data: cifar10
+  - model: resnet
+  - unlearn: null    # neggrad | neggradp | finetune | l1sparse | scrub | regun | salun | ssd | amun | lur
+  - _self_
+
+seed: 42
+
+paths:
+  cache_dir: ${oc.env:CACHE_DIR, cache}
+  data_dir: ${oc.env:DATA_DIR, cache}
+  outputs_dir: ${hydra:run.dir}
+
+run:
+  experiment_id: null
+  base_weights: ${paths.cache_dir}/models/${model.model.name}_${data.name}_${split.scheme}_forget${split.forget_frac}_${seed}.ckpt
+  retrain_weights: ${paths.cache_dir}/models/${model.model.name}_${data.name}_${split.scheme}_forget${split.forget_frac}_retrained_${seed}.ckpt
+
+mul_eval:
+  mia_num_models: 4
+  cache: ${paths.cache_dir}/eval/${model.model.name}_${data.name}_${split.scheme}_forget${split.forget_frac}_${seed}_cached_references.pt
+
+# Base training setup
+trainer:
+  max_epochs: 100
+  accelerator: auto
+  devices: 1
+  precision: bf16-mixed
+  log_every_n_steps: 0
+  enable_checkpointing: false
+  enable_progress_bar: true
+
+# Data splits (heldout taken first from total; val/forget/retain from remainder)
+split:
+  seed: ${seed}
+  scheme: random # stratified | random | class
+  heldout_frac: 0.1 # taken first from total
+  validation_frac: 0.1
+  retain_frac: 0.79 # only for stratified and random, else inferred
+  forget_frac: 0.01 # stratified/random: overall fraction; class: per-forget-class fraction
+  forget_classes: [3] # only for class
+
+# Logging / IO
+logging:
+  enable: true
+  entity: "your-entity"
+  project: "your-project"
+  name: "your-name"
+  tags: [
+    "unlearn:${hydra:runtime.choices.unlearn}",
+  ]
+  offline: true
+
+checkpoint:
+  monitor: val/acc
+  mode: max 
+
+hydra:
+  run:
+    dir: ${oc.env:OUTPUTS_DIR, outputs}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ${oc.env:OUTPUTS_DIR, outputs}/multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra:job.num}
+  output_subdir: null 

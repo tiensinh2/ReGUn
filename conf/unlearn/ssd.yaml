@@ -1,0 +1,11 @@
+name: ssd
+
+evaluate_each_epoch: false
+
+alpha: 10.0
+lambda: 1.0
+
+fim_microbatch_size: 16
+
+optim:
+  name: none
