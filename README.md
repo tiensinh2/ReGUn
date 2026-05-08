@@ -1,4 +1,13 @@
-# ReGUn: Reference-Guided Machine Unlearning 
+# Reference-Guided Machine Unlearning 
+
+Official implementation for the paper: **"Reference-Guided Machine Unlearning"** (Currently under review).
+
+---
+## Abstract
+
+Machine unlearning aims to remove the influence of specific data from trained models while preserving general utility. Existing approximate unlearning methods often rely on performance-degradation heuristics, such as loss maximization or random labeling. However, these signals can be poorly conditioned, leading to unstable optimization and harming the model's generalization. We argue that unlearning should instead prioritize distributional indistinguishability, aligning the model’s behavior on forget data with its behavior on truly unseen data. Motivated by this, we propose Reference-Guided Unlearning ReGUn, a framework that leverages a disjoint held-out dataset to provide a principled, class-conditioned reference for distillation. We demonstrate that, across various model architectures, natural image datasets, and varying forget fractions, ReGUn consistently outperforms standard approximate baselines, achieving a superior forgetting-utility trade-off.
+
+---
 
 ## Overview
 
