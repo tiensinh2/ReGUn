@@ -34,7 +34,6 @@ class MULEvaluator:
 
         self._ensure_reference_metrics_cached()
 
-
     def _ensure_reference_metrics_cached(self) -> None:
         """Persist reference metrics for the default reference if missing."""
         cached: Optional[Dict[str, Any]] = None
@@ -73,7 +72,9 @@ class MULEvaluator:
                 ref_name = f"reference_{idx:03d}"
                 ref_path = resolve_checkpoint_path(self.cfg, retrain=True, reference_run=idx)
                 if not ref_path.exists():
-                    raise FileNotFoundError(f"[MULEvaluator] Reference checkpoint missing at {ref_path} (name={ref_name}).")
+                    raise FileNotFoundError(
+                        f"[MULEvaluator] Reference checkpoint missing at {ref_path} (name={ref_name})."
+                    )
                 model = load_model(self.cfg, str(ref_path))
                 for key in missing_keys:
                     reference_probs[key].append(calc_reference_probs(model, loader_map[key], self.device))
@@ -88,7 +89,6 @@ class MULEvaluator:
 
         torch.save(metrics, str(self._reference_metrics_path))
 
-    
     def _get_cached_reference_metrics(self) -> Dict[str, Any]:
         """Load cached metrics for the default reference model."""
         return torch.load(str(self._reference_metrics_path), map_location="cpu", weights_only=False)
@@ -121,45 +121,46 @@ class MULEvaluator:
         return mia_results
 
     def _compute_gap_metrics(
-    self,
-    unlearned_metrics: Dict[str, Any],
-    retrained_metrics: Dict[str, Any],
-    split: str,
-) -> Dict[str, float]:
-    acc_key = f"acc_{split}"
-    rmia_acc_key = "rmia_acc" if split == "test" else "rmia_eval_acc"
-    rmia_auc_key = "rmia_auc" if split == "test" else "rmia_eval_auc"
-    suffix = "" if split == "test" else f"_{split}"
+        self,
+        unlearned_metrics: Dict[str, Any],
+        retrained_metrics: Dict[str, Any],
+        split: str,
+    ) -> Dict[str, float]:
+        """Compute average gap metrics and individual component gaps for a specific split."""
+        acc_key = f"acc_{split}"
+        rmia_acc_key = "rmia_acc" if split == "test" else "rmia_eval_acc"
+        rmia_auc_key = "rmia_auc" if split == "test" else "rmia_eval_auc"
+        suffix = "" if split == "test" else f"_{split}"
 
-    unlearned_gap_metrics = {
-        "acc_retain": unlearned_metrics["acc_retain"],
-        acc_key: unlearned_metrics[acc_key],
-        "acc_forget": unlearned_metrics["acc_forget"],
-        "mia_acc": unlearned_metrics[rmia_acc_key],
-        "mia_auc": unlearned_metrics[rmia_auc_key],
-    }
-    retrained_gap_metrics = {
-        "acc_retain": retrained_metrics["acc_retain"],
-        acc_key: retrained_metrics[acc_key],
-        "acc_forget": retrained_metrics["acc_forget"],
-        "mia_acc": retrained_metrics[rmia_acc_key],
-        "mia_auc": retrained_metrics[rmia_auc_key],
-    }
+        unlearned_gap_metrics = {
+            "acc_retain": unlearned_metrics["acc_retain"],
+            acc_key: unlearned_metrics[acc_key],
+            "acc_forget": unlearned_metrics["acc_forget"],
+            "mia_acc": unlearned_metrics[rmia_acc_key],
+            "mia_auc": unlearned_metrics[rmia_auc_key],
+        }
+        retrained_gap_metrics = {
+            "acc_retain": retrained_metrics["acc_retain"],
+            acc_key: retrained_metrics[acc_key],
+            "acc_forget": retrained_metrics["acc_forget"],
+            "mia_acc": retrained_metrics[rmia_acc_key],
+            "mia_auc": retrained_metrics[rmia_auc_key],
+        }
 
-    # --- THÊM VÀO: tính từng gap thành phần ---
-    component_gaps = {
-        f"gap_retain{suffix}":     abs(unlearned_gap_metrics["acc_retain"] - retrained_gap_metrics["acc_retain"]),
-        f"gap_forget{suffix}":     abs(unlearned_gap_metrics["acc_forget"] - retrained_gap_metrics["acc_forget"]),
-        f"gap_{acc_key}{suffix}":  abs(unlearned_gap_metrics[acc_key]      - retrained_gap_metrics[acc_key]),
-        f"gap_mia_auc{suffix}":    abs(unlearned_gap_metrics["mia_auc"]    - retrained_gap_metrics["mia_auc"]),
-    }
+        # 4 metrics thành phần riêng lẻ
+        component_gaps = {
+            f"gap_retain{suffix}":  abs(unlearned_gap_metrics["acc_retain"] - retrained_gap_metrics["acc_retain"]),
+            f"gap_forget{suffix}":  abs(unlearned_gap_metrics["acc_forget"] - retrained_gap_metrics["acc_forget"]),
+            f"gap_acc{suffix}":     abs(unlearned_gap_metrics[acc_key]      - retrained_gap_metrics[acc_key]),
+            f"gap_mia_auc{suffix}": abs(unlearned_gap_metrics["mia_auc"]    - retrained_gap_metrics["mia_auc"]),
+        }
 
-    return {
-        f"average_gap{suffix}":      average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, unlearned_gap_metrics.keys()),
-        f"average_gap{suffix}_auc":  average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, unlearned_gap_metrics.keys() - {"mia_acc"}),
-        f"average_gap{suffix}_test": average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, ["mia_auc", acc_key]),
-        **component_gaps,  # unpack 4 metrics thành phần vào cùng dict
-    }
+        return {
+            f"average_gap{suffix}":      average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, unlearned_gap_metrics.keys()),
+            f"average_gap{suffix}_auc":  average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, unlearned_gap_metrics.keys() - {"mia_acc"}),
+            f"average_gap{suffix}_test": average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, ["mia_auc", acc_key]),
+            **component_gaps,
+        }
 
     def run(
         self,
@@ -167,7 +168,6 @@ class MULEvaluator:
         device: Optional[Union[str, torch.device]] = None,
     ) -> Dict[str, Any]:
         """Run the evaluation suite on the provided model."""
-
         self.device = torch.device(device) if device is not None else self.device
 
         model_unlearned = model_unlearned.to(self.device)
@@ -179,24 +179,24 @@ class MULEvaluator:
 
     def _compute_metrics(self, model_unlearned: LightningModule) -> Dict[str, Any]:
         """Compute all metrics for an unlearned model."""
-
         reference_metrics = self._get_cached_reference_metrics()
         retrained_model_metrics = reference_metrics["model_retrained"]
         self.model_retrained = self.model_retrained.to(self.device)
         self.model_retrained.eval()
-    
+
         results: Dict[str, Any] = {}
         results["acc_retain"] = accuracy(model_unlearned, self.retain_loader, device=self.device)
-        results["acc_eval"] =   accuracy(model_unlearned, self.eval_loader, device=self.device)
-        results["acc_test"] =   accuracy(model_unlearned, self.test_loader, device=self.device)
+        results["acc_eval"]   = accuracy(model_unlearned, self.eval_loader,   device=self.device)
+        results["acc_test"]   = accuracy(model_unlearned, self.test_loader,   device=self.device)
         results["acc_forget"] = accuracy(model_unlearned, self.forget_loader, device=self.device)
 
         results["forget_entropy"] = entropy(model_unlearned, self.forget_loader, device=self.device)
-        results["forget_entropy_gap_retrained"] = results["forget_entropy"]  - retrained_model_metrics["forget_entropy"]
-        results["divergence_retain"] =  prediction_divergence(model_unlearned, self.model_retrained, self.retain_loader, device=self.device)
-        results["divergence_eval"] =    prediction_divergence(model_unlearned, self.model_retrained, self.eval_loader, device=self.device)
-        results["divergence_test"] =    prediction_divergence(model_unlearned, self.model_retrained, self.test_loader, device=self.device)
-        results["divergence_forget"] =  prediction_divergence(model_unlearned, self.model_retrained, self.forget_loader, device=self.device)
+        results["forget_entropy_gap_retrained"] = results["forget_entropy"] - retrained_model_metrics["forget_entropy"]
+
+        results["divergence_retain"] = prediction_divergence(model_unlearned, self.model_retrained, self.retain_loader,  device=self.device)
+        results["divergence_eval"]   = prediction_divergence(model_unlearned, self.model_retrained, self.eval_loader,    device=self.device)
+        results["divergence_test"]   = prediction_divergence(model_unlearned, self.model_retrained, self.test_loader,    device=self.device)
+        results["divergence_forget"] = prediction_divergence(model_unlearned, self.model_retrained, self.forget_loader,  device=self.device)
 
         mia_results = self._compute_mia_metrics(model_unlearned, reference_metrics["reference_probs"])
         results.update(mia_results)
@@ -213,16 +213,14 @@ class MULEvaluator:
         self.model_retrained.eval()
         metrics: Dict[str, float] = {}
         metrics["acc_retain"] = accuracy(self.model_retrained, self.retain_loader, device=self.device)
-        metrics["acc_eval"] = accuracy(self.model_retrained, self.eval_loader, device=self.device)
-        metrics["acc_test"] = accuracy(self.model_retrained, self.test_loader, device=self.device)
+        metrics["acc_eval"]   = accuracy(self.model_retrained, self.eval_loader,   device=self.device)
+        metrics["acc_test"]   = accuracy(self.model_retrained, self.test_loader,   device=self.device)
         metrics["acc_forget"] = accuracy(self.model_retrained, self.forget_loader, device=self.device)
         metrics["forget_entropy"] = entropy(self.model_retrained, self.forget_loader, device=self.device)
         mia_results = self._compute_mia_metrics(self.model_retrained, ref_probs)
         metrics.update(mia_results)
         self.model_retrained.cpu()
         return metrics
-
-
 
 
 class UnlearningEpochEvaluationCallback(Callback):
@@ -240,7 +238,6 @@ class UnlearningEpochEvaluationCallback(Callback):
 
     def on_train_epoch_end(self, trainer: Any, pl_module: LightningModule) -> None:
         """Trigger evaluation at the end of each training epoch."""
-
         current_epoch = trainer.current_epoch + 1
         model_unlearned = getattr(pl_module, "model", pl_module)
         device = pl_module.device
