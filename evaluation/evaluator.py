@@ -121,37 +121,45 @@ class MULEvaluator:
         return mia_results
 
     def _compute_gap_metrics(
-        self,
-        unlearned_metrics: Dict[str, Any],
-        retrained_metrics: Dict[str, Any],
-        split: str,
-    ) -> Dict[str, float]:
-        """Compute average gap metrics for a specific nonmember split."""
-        acc_key = f"acc_{split}"
-        rmia_acc_key = "rmia_acc" if split == "test" else "rmia_eval_acc"
-        rmia_auc_key = "rmia_auc" if split == "test" else "rmia_eval_auc"
-        suffix = "" if split == "test" else f"_{split}"
+    self,
+    unlearned_metrics: Dict[str, Any],
+    retrained_metrics: Dict[str, Any],
+    split: str,
+) -> Dict[str, float]:
+    acc_key = f"acc_{split}"
+    rmia_acc_key = "rmia_acc" if split == "test" else "rmia_eval_acc"
+    rmia_auc_key = "rmia_auc" if split == "test" else "rmia_eval_auc"
+    suffix = "" if split == "test" else f"_{split}"
 
-        unlearned_gap_metrics = {
-            "acc_retain": unlearned_metrics["acc_retain"],
-            acc_key: unlearned_metrics[acc_key],
-            "acc_forget": unlearned_metrics["acc_forget"],
-            "mia_acc": unlearned_metrics[rmia_acc_key],
-            "mia_auc": unlearned_metrics[rmia_auc_key],
-        }
-        retrained_gap_metrics = {
-            "acc_retain": retrained_metrics["acc_retain"],
-            acc_key: retrained_metrics[acc_key],
-            "acc_forget": retrained_metrics["acc_forget"],
-            "mia_acc": retrained_metrics[rmia_acc_key],
-            "mia_auc": retrained_metrics[rmia_auc_key],
-        }
+    unlearned_gap_metrics = {
+        "acc_retain": unlearned_metrics["acc_retain"],
+        acc_key: unlearned_metrics[acc_key],
+        "acc_forget": unlearned_metrics["acc_forget"],
+        "mia_acc": unlearned_metrics[rmia_acc_key],
+        "mia_auc": unlearned_metrics[rmia_auc_key],
+    }
+    retrained_gap_metrics = {
+        "acc_retain": retrained_metrics["acc_retain"],
+        acc_key: retrained_metrics[acc_key],
+        "acc_forget": retrained_metrics["acc_forget"],
+        "mia_acc": retrained_metrics[rmia_acc_key],
+        "mia_auc": retrained_metrics[rmia_auc_key],
+    }
 
-        return {
-            f"average_gap{suffix}":      average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, unlearned_gap_metrics.keys()),
-            f"average_gap{suffix}_auc":  average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, unlearned_gap_metrics.keys() - {"mia_acc"}),
-            f"average_gap{suffix}_test": average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, ["mia_auc", acc_key]),
-        }
+    # --- THÊM VÀO: tính từng gap thành phần ---
+    component_gaps = {
+        f"gap_retain{suffix}":     abs(unlearned_gap_metrics["acc_retain"] - retrained_gap_metrics["acc_retain"]),
+        f"gap_forget{suffix}":     abs(unlearned_gap_metrics["acc_forget"] - retrained_gap_metrics["acc_forget"]),
+        f"gap_{acc_key}{suffix}":  abs(unlearned_gap_metrics[acc_key]      - retrained_gap_metrics[acc_key]),
+        f"gap_mia_auc{suffix}":    abs(unlearned_gap_metrics["mia_auc"]    - retrained_gap_metrics["mia_auc"]),
+    }
+
+    return {
+        f"average_gap{suffix}":      average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, unlearned_gap_metrics.keys()),
+        f"average_gap{suffix}_auc":  average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, unlearned_gap_metrics.keys() - {"mia_acc"}),
+        f"average_gap{suffix}_test": average_metric_gap(unlearned_gap_metrics, retrained_gap_metrics, ["mia_auc", acc_key]),
+        **component_gaps,  # unpack 4 metrics thành phần vào cùng dict
+    }
 
     def run(
         self,
