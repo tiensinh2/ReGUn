@@ -7,7 +7,7 @@ trainer:
 
 optim:
   name: sgd
-  lr: 0.01
+  lr: 0.001  
   momentum: 0.9           # only used if sgd
   weight_decay: 0.0
   nesterov: false         # only used if sgd
