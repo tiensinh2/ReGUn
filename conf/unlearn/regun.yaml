@@ -18,7 +18,7 @@ scheduler:
   name: none
 
 regun:
-  selector: uniform          # uniform | class_informed | feature_1nn
+  selector: class_informed          # uniform | class_informed | feature_1nn
   aggregation: mean_probs    # mean_probs | mean_logits
   fixed_reference: true      # use a frozen copy of the initial model for ReGUn targets
   temperature: 1.0
