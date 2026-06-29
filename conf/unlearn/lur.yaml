@@ -1,12 +1,8 @@
 name: lur
-
 evaluate_each_epoch: true
-
-alpha: 0.01
-retain_weight: 0.5
-forget_weight: ${eval:1 - ${.retain_weight}}
-# To match paper's Lr + lambda * Lf(θ′): retain_weight = 1 and forget_weight = lambda
-
+alpha: 0.01                      # inner step nhỏ (bilevel ổn định hơn)
+retain_weight: 1.0               # paper LUR gốc: Lr + λ·Lf ⇒ retain_weight=1
+forget_weight: 0.1               # = λ (forget yếu để tránh collapse)
 pruning:
   enabled: true
   auto: true
@@ -14,18 +10,15 @@ pruning:
   prune_num: 1
   layer_patterns: null
   exclude_bn: true
-
 trainer:
   max_epochs: 10
-
 optim:
   name: sgd
   lr: 0.01
-  momentum: 0.9           # only used if sgd
+  momentum: 0.9
   weight_decay: 0.0
-  nesterov: false         # only used if sgd
-  betas: [0.9, 0.999]     # only used if adamw
-  exclude_wd_norm_bias: true  # only used if adamw
-
+  nesterov: false
+  betas: [0.9, 0.999]
+  exclude_wd_norm_bias: true
 scheduler:
   name: none
