@@ -1,23 +1,17 @@
 name: salun
-
 evaluate_each_epoch: true
-
 trainer:
   max_epochs: 10
-
 optim:
   name: sgd
   lr: 0.01
-  momentum: 0.9           # only used if sgd
+  momentum: 0.9
   weight_decay: 0.0
-  nesterov: false         # only used if sgd
-  betas: [0.9, 0.999]     # only used if adamw
-  exclude_wd_norm_bias: true  # only used if adamw
-
+  nesterov: false
+  betas: [0.9, 0.999]
+  exclude_wd_norm_bias: true
 scheduler:
   name: none
-
-retain_weight: 0.5
+retain_weight: 0.6               # paper w ∈ [0.1, 0.9]; nghiêng nhẹ retain
 forget_weight: ${eval:1 - ${.retain_weight}}
-
-saliency_keep_ratio: 0.5
+saliency_keep_ratio: 0.5         # 🔥 paper "sparsity 50%"
