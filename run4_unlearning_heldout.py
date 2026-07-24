@@ -249,12 +249,11 @@ def _print_prediction_report(
     model_base = model_base.to(device).eval()
     model_unlearned = model_unlearned.to(device).eval()
 
+    # Restrict to forget (450) + test (10k) only.
+    # retain (~40k) + heldout + val add ~50k samples × 2 models × 2 calls = very long hang.
     splits: Dict[str, DataLoader] = {
-        "forget":  dm.forget_eval_dataloader(),
-        "retain":  dm.retain_eval_dataloader(),
-        "heldout": dm.heldout_eval_dataloader(),
-        "val":     dm.val_dataloader(),
-        "test":    dm.test_dataloader(),
+        "forget": dm.forget_eval_dataloader(),
+        "test":   dm.test_dataloader(),
     }
 
     os.makedirs(save_dir, exist_ok=True)
